@@ -35,7 +35,12 @@ const posts = ref<any[]>([]);
 const fetchMyPosts = async () => {
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts/me`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (response.ok) {
       posts.value = await response.json();
     }
@@ -48,8 +53,12 @@ const deletePost = async (postId: number) => {
   
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
-      method: 'DELETE'
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     
     if (response.ok) {

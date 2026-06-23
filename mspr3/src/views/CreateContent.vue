@@ -77,8 +77,12 @@ const publishPost = async () => {
 
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts`, {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
       body: formData
     });
 

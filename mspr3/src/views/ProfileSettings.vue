@@ -29,6 +29,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 const user = reactive({
+  id: null,
   displayName: '',
   avatar: '/default-avatar.png'
 });
@@ -45,23 +46,27 @@ const onAvatarSelected = (event: Event) => {
 };
 
 const saveProfile = async () => {
+  if (!user.id) return;
   const formData = new FormData();
-  formData.append('displayName', user.displayName);
+  formData.append('User_mail', user.displayName); 
   if (avatarFile.value) {
     formData.append('avatar', avatarFile.value);
   }
 
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/profile`, {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/users/${user.id}`, {
       method: 'PUT',
-      body: formData
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData 
     });
     
     if (response.ok) {
       const data = await response.json();
-      user.displayName = data.displayName;
-      user.avatar = data.avatar;
+      user.displayName = data.User_mail;
     }
   } catch (error) {
   }
@@ -83,8 +88,12 @@ const toggleDarkMode = () => {
 const logout = async () => {
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    await fetch(`${apiUrl}/api/auth/logout`, {
-      method: 'POST'
+    const token = localStorage.getItem('token');
+    await fetch(`${apiUrl}/api/v0/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
   } catch (error) {
   }
@@ -97,11 +106,16 @@ onMounted(async () => {
   
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/profile`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/users/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (response.ok) {
       const data = await response.json();
-      user.displayName = data.displayName;
-      user.avatar = data.avatar;
+      user.id = data.User_ID;
+      user.displayName = data.User_mail;
     }
   } catch (error) {
   }

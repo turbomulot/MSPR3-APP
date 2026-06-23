@@ -3,6 +3,11 @@
     <div class="header">
       <h1>{{ isLogin ? 'Connexion' : 'Inscription' }}</h1>
     </div>
+
+    <div v-if="errorMessage" class="error-alert" style="color: red; margin-bottom: 1rem; padding: 0.5rem; background: #fee; border-radius: 4px;">
+      {{ errorMessage }}
+    </div>
+
     <form @submit.prevent="handleSubmit" class="auth-form">
       <div v-if="!isLogin" class="form-group">
         <label>Nom d'affichage</label>
@@ -20,7 +25,8 @@
         {{ isLogin ? 'Se connecter' : 'Créer un compte' }}
       </button>
     </form>
-    <p class="toggle-mode" @click="isLogin = !isLogin">
+    
+    <p class="toggle-mode" @click="toggleMode" style="cursor: pointer; color: blue; text-decoration: underline; margin-top: 1rem;">
       {{ isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter" }}
     </p>
   </div>
@@ -32,35 +38,75 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const isLogin = ref(true);
+const errorMessage = ref(''); // State to hold our error text
+
 const form = reactive({
   displayName: '',
   email: '',
   password: ''
 });
 
+const toggleMode = () => {
+  isLogin.value = !isLogin.value;
+  errorMessage.value = '';
+  form.password = ''; 
+};
+
 const handleSubmit = async () => {
+  errorMessage.value = '';
+
   try {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const endpoint = isLogin.value ? '/api/auth/login' : '/api/auth/register';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const endpoint = isLogin.value ? '/api/v0/auth/login' : '/api/v0/auth/register';
     
-    const payload = isLogin.value 
-      ? { email: form.email, password: form.password }
-      : { displayName: form.displayName, email: form.email, password: form.password };
+    let bodyPayload;
+    let headers: Record<string, string> = {};
+
+    if (isLogin.value) {
+      bodyPayload = new URLSearchParams();
+      bodyPayload.append('username', form.email);
+      bodyPayload.append('password', form.password);
+      headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    } else {
+      bodyPayload = JSON.stringify({ 
+        email: form.email, 
+        password: form.password, 
+        displayName: form.displayName 
+      });
+      headers['Content-Type'] = 'application/json';
+    }
 
     const response = await fetch(`${apiUrl}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+      headers: headers,
+      body: bodyPayload
     });
 
     if (response.ok) {
       const data = await response.json();
-      localStorage.setItem('token', data.token);
-      router.push('/feed');
+      if (isLogin.value) {
+        localStorage.setItem('token', data.token);
+        router.push('/feed');
+      } else {
+        isLogin.value = true;
+        errorMessage.value = "Compte créé avec succès ! Veuillez vous connecter.";
+      }
+    } else {
+      const errorData = await response.json();
+      
+      if (errorData && errorData.detail) {
+        if (typeof errorData.detail === 'string') {
+          errorMessage.value = errorData.detail; 
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage.value = "Erreur de validation des données.";
+        }
+      } else {
+        errorMessage.value = "Une erreur inattendue est survenue.";
+      }
     }
   } catch (error) {
+    console.error("Fetch error:", error);
+    errorMessage.value = "Impossible de se connecter au serveur.";
   }
 };
 </script>

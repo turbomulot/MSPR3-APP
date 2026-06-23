@@ -68,10 +68,14 @@ const posts = ref<any[]>([]);
 const fetchPosts = async () => {
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts?sort=${sortBy.value}&search=${searchQuery.value}`);
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/?sort=${sortBy.value}&search=${searchQuery.value}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     if (response.ok) {
       const data = await response.json();
-      // On initialise les propriétés liées aux commentaires pour chaque post
       posts.value = data.map((p: any) => ({
         ...p,
         showComments: false,
@@ -90,8 +94,12 @@ const handleSearch = () => {
 const likePost = async (postId: number) => {
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
-      method: 'POST'
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/${postId}/like`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     if (response.ok) {
       const data = await response.json();
@@ -111,11 +119,15 @@ const toggleComments = async (postId: number) => {
 
   post.showComments = !post.showComments;
 
-  // Récupère les commentaires la première fois qu'on ouvre la section
   if (post.showComments && post.comments.length === 0 && post.commentsCount > 0) {
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${apiUrl}/api/posts/${postId}/comments`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiUrl}/api/v0/posts/${postId}/comments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         post.comments = await response.json();
       }
@@ -129,9 +141,13 @@ const submitComment = async (post: any) => {
 
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
-    const response = await fetch(`${apiUrl}/api/posts/${post.id}/comments`, {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${apiUrl}/api/v0/posts/${post.id}/comments`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({ text: post.newComment })
     });
 
@@ -139,7 +155,7 @@ const submitComment = async (post: any) => {
       const addedComment = await response.json();
       post.comments.push(addedComment);
       post.commentsCount = addedComment.commentsCount;
-      post.newComment = ''; // Vide l'input
+      post.newComment = ''; 
     }
   } catch (error) {
   }
