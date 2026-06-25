@@ -81,7 +81,6 @@ const getMediaUrl = (url: string | undefined | null) => {
   if (!url) return '';
   if (url.startsWith('http') || url.startsWith('data:')) return url;
   
-  // Ajout de l'URL de votre serveur en fallback explicite
   const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ;
   const formattedUrl = url.startsWith('/') ? url : `/${url}`;
   return `${apiUrl}${formattedUrl}`;
@@ -109,13 +108,11 @@ const fetchPosts = async () => {
     if (response.ok) {
       const data = await response.json();
       posts.value = data.map((p: any) => {
-        // CORRECTION ICI: On s'assure que mediaList est un vrai tableau
         let parsedMedia = [];
         if (Array.isArray(p.media)) {
           parsedMedia = p.media;
         } else if (typeof p.media === 'string') {
           try {
-            // Si la BDD a retourné "['/static/...']", on le transforme en vrai JSON
             parsedMedia = JSON.parse(p.media.replace(/'/g, '"'));
           } catch (e) {
             parsedMedia = [p.media];

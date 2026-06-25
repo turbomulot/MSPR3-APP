@@ -4,7 +4,7 @@
     <div class="avatar-section">
       <img :src="previewAvatar || user.avatar" alt="Avatar" class="avatar-preview" />
       <input type="file" accept="image/*" @change="onAvatarSelected" ref="avatarInput" style="display: none" />
-      <button @click="$refs.avatarInput.click()" class="btn-change-avatar">Changer la photo</button>
+      <button @click="avatarInput?.click()" class="btn-change-avatar">Changer la photo</button>
     </div>
     <div class="form-group">
       <label>Nom d'affichage</label>
@@ -27,6 +27,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const avatarInput = ref<HTMLInputElement | null>(null);
 
 const user = reactive({
   id: null,
